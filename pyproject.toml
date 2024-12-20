@@ -28,6 +28,7 @@ build-backend = "poetry.core.masonry.api"
 
 [flake8]
 max-line-length = 119
+exclude = .git, __pycache__
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -9,6 +9,7 @@ readme = "README.md"
 python = "^3.13"
 requests = "^2.32.3"
 pandas = "^2.2.3"
+openpyxl = "^3.1.5"
 
 
 [tool.poetry.group.lint.dependencies]
@@ -28,7 +29,7 @@ build-backend = "poetry.core.masonry.api"
 
 [flake8]
 max-line-length = 119
-exclude = .git, __pycache__
+exclude = '__pycache__'
 
 [tool.mypy]
 disallow_untyped_defs = true

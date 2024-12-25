@@ -1,64 +1,46 @@
+import json
+import logging
 import os
-from typing import Union, Any
-from datetime import datetime as dt, timedelta
-from dateutil import parser
 
-import pandas as pd
+from src.utils import (get_currency_rates, get_data, get_data_card, get_data_value, get_exel_operations, get_greeting,
+                       get_stock_prices, get_top_transactions)
 
+base_dir = os.path.dirname(os.path.abspath(__file__))
+file_path_log = os.path.join(base_dir, "..", "logs", "views.log")
 
-def file_path():
-    """Функция, принимающая путь до файла"""
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    file_path_excel = os.path.join(base_dir, "..", "data", "operations.xlsx")
-    return file_path_excel
+logging.basicConfig(
+    level=logging.WARNING,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    filename=file_path_log,
+    encoding="utf-8",
+    filemode="w",
+)
 
-
-def get_exel_operations(file=None):
-    """Функция для считывания финансовых операций из Excel-файла"""
-    if file is None:
-        file = file_path()
-    try:
-        operations = pd.read_excel(file)
-        return operations.to_dict(orient="records")
-    except FileNotFoundError:
-        print(f"Файл {file} не найден.")
-        return []
-    except Exception as e:
-        print(f"Ошибка при чтении файла: {e}")
-        return []
+logger = logging.getLogger()
 
 
-# print(get_exel_operations())
+def main_page(date: str):
+    """Функция, принимающая информацию о главной странице"""
+    logger.info(f"Запуск функции {main_page.__name__}")
+    df = get_exel_operations()
+    filtered = get_data_value(date, df)
+    greeting = get_greeting(date)
+    cards_info = get_data_card(filtered)
+    top_transactions = get_top_transactions(filtered)
+    currency_rates = get_currency_rates(date)
+    stock_rates = get_stock_prices()
+    main_page_info = json.dumps(
+        {
+            "greeting": greeting,
+            "cards": cards_info,
+            "top_transactions": top_transactions,
+            "currency_rates": currency_rates,
+            "stock_prices": stock_rates,
+        },
+        ensure_ascii=False,
+    )
+    logger.info("Завершение генерации JSON-ответа для главной страницы")
+    return main_page_info
 
 
-def get_data(current_date: Union[str, list]) -> Any:
-    """Функция, преобразующая дату в формат datetime"""
-    try:
-        if isinstance(current_date, str):
-            try:
-                parsed_date = dt.strptime(current_date, "%d.%m.%Y %H:%M:%S")
-
-            except ValueError:
-                parsed_date = parser.parse(current_date)
-                return parsed_date.strftime("%d.%m.%Y %H:%M:%S")
-
-        elif isinstance(current_date, list):
-            parsed_date = parser.parse("-".join(current_date))
-
-        else:
-            return "Неверный формат данных"
-
-        end_datetime = parsed_date
-        start_datetime = dt(end_datetime.year, end_datetime.month, 1, 0,0)
-        datetime_range = []
-        date_for_range = start_datetime
-        while date_for_range <= end_datetime:
-            datetime_range.append(date_for_range.strftime("%d.%m.%Y %H:%M:%S"))
-            date_for_range += timedelta(seconds=1)
-        return datetime_range
-
-    except Exception as e:
-        return f"Ошибка при обработке даты: {e}"
-
-
-print(get_data("2019.07.17 15:05:27"))
+# print(main_page("2019-12-20 23:59:59"))

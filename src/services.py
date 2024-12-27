@@ -51,15 +51,3 @@ def investment_bank(month: str, transactions: List[Dict[str, Any]], limit: int) 
             continue
     logger.info(f"Функция {investment_bank.__name__} завершена успешно.")
     return investment_piggy_bank
-
-#
-# transactions = [
-#     {"Дата операции": "2024-12-10", "Сумма операции": 245.34},
-#     {"Дата операции": "2024-12-15", "Сумма операции": 50.99},
-#     {"Дата операции": "2024-12-20", "Сумма операции": 395.78},
-#     {"Дата операции": "2024-11-30", "Сумма операции": 120.56},
-#     {"Дата операции": "2024-12-05", "Сумма операции": 151.90}
-# ]
-# savings = investment_bank("2024-12", transactions, 50)
-# # print(f"Отложенная сумма: {savings} ₽")
-# print(savings)

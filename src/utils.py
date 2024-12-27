@@ -96,7 +96,7 @@ def get_data(user_date: Union[str, None]) -> datetime:
 
 def get_data_value(date: Any, df_object: DataFrame) -> DataFrame:
     """Функция, сортирующая значения по дате"""
-    end_datetime = get_data(date)
+    end_datetime = get_data(date).replace(hour=23, minute=59, second=59)
     start_datetime = datetime(end_datetime.year, end_datetime.month, 1, 0, 0)
     if "Дата операции" not in df_object.columns:
         logger.error(f"Функция {get_data_value.__name__} завершилась с ошибкой {KeyError}")
@@ -104,6 +104,8 @@ def get_data_value(date: Any, df_object: DataFrame) -> DataFrame:
 
     try:
         df_object["Дата"] = pd.to_datetime(df_object["Дата операции"], format="%d.%m.%Y %H:%M:%S", errors="coerce")
+        if df_object["Дата"].isna().any():
+            raise ValueError("Некорректный формат в 'Дата операции'.")
         filtered_list = df_object[(df_object["Дата"] >= start_datetime) & (df_object["Дата"] <= end_datetime)]
         logger.info(f"Успешное завершение работы функции {get_data_value.__name__}")
         return filtered_list
@@ -131,34 +133,54 @@ def get_greeting(date_str: str) -> str:
 def get_data_card(df_operations: DataFrame) -> list[dict]:
     """функция, выводящая 4 цифры карты, общую сумму расходов, кешбэк"""
     logger.info(f"Запуск функции {get_data_card.__name__}")
-    df_operations = get_exel_operations()
-    card_list = df_operations["Номер карты"].unique()
+
+    required_columns = {"Номер карты", "Сумма операции"}
+    if not required_columns.issubset(df_operations.columns):
+        logger.error(f"Отсутствуют необходимые колонки: {required_columns - set(df_operations.columns)}")
+        raise KeyError(f"DataFrame должен содержать колонки: {', '.join(required_columns)}")
+    if df_operations.empty:
+        logger.warning("Передан пустой DataFrame. Возвращаем пустой список.")
+        return []
+
     card_data = []
-    for card in card_list:
-        df_data = df_operations.loc[df_operations.loc[:, "Номер карты"] == card]
-        total_spent = float(abs(df_data[df_data["Сумма операции"] < 0]["Сумма операции"].sum()))
-        round_total = round(total_spent, 2)
-        cashback = round(total_spent / 100, 2)
-        card_data.append({"last_digits": str(card)[-4:], "total_spent": round_total, "cashback": cashback})
-    logger.info(f"Успешное завершение работы функции {get_data_card.__name__}")
+    try:
+        card_list = df_operations["Номер карты"].unique()  # Уникальные номера карт
+        for card in card_list:
+            df_data = df_operations.loc[df_operations["Номер карты"] == card]
+
+            total_spent = abs(df_data.loc[df_data["Сумма операции"] < 0, "Сумма операции"].sum())
+            round_total = round(total_spent, 2)
+
+            cashback = round(total_spent / 100, 2)
+            card_data.append({"last_digits": str(card)[-4:], "total_spent": round_total, "cashback": cashback})
+        logger.info(f"Успешное завершение работы функции {get_data_card.__name__}")
+    except Exception as e:
+        logger.error(f"Функция {get_data_card.__name__} завершилась с ошибкой: {e}")
+        raise ValueError(f"Ошибка при обработке данных: {e}")
+
     return card_data
 
 
 def get_top_transactions(df_data: DataFrame, top_number=5) -> list[dict]:
     """Топ-5 транзакций по сумме платежа"""
     logger.info(f"Запуск функции {get_top_transactions.__name__}")
+    if df_data.empty:
+        logger.warning("DataFrame пуст.")
+        return []
+    df_data["amount"] = df_data["Сумма платежа"].map(float).map(abs)
+    sorted_df_data = df_data.sort_values(by="amount", ascending=False, ignore_index=True)
     top_transactions_list = []
-    df_object = df_data.loc[::]
-    df_object["amount"] = df_object.loc[:, "Сумма платежа"].map(float).map(abs)
-    sorted_df_data = df_object.sort_values(by="amount", ascending=True, ignore_index=True)
-    for i in range(top_number):
-        date = sorted_df_data.loc[i, "Дата платежа"]
-        amount = float(sorted_df_data.loc[i, "amount"])
-        category = sorted_df_data.loc[i, "Категория"]
-        description = sorted_df_data.loc[i, "Описание"]
+    for i in range(min(top_number, len(sorted_df_data))):
+        transaction = sorted_df_data.iloc[i]
+        date = transaction["Дата платежа"]
+        amount = transaction["amount"]
+        category = transaction["Категория"]
+        description = transaction["Описание"]
+
         top_transactions_list.append(
             {"date": date, "amount": amount, "category": category, "description": description}
         )
+
     logger.info(f"Успешное завершение работы функции {get_top_transactions.__name__}")
     return top_transactions_list
 
@@ -167,32 +189,45 @@ def get_currency_rates(date_of_operation: str, file=file_path_json) -> list[dict
     """Курс валют"""
     try:
         logger.info(f"Запуск функции {get_currency_rates.__name__}")
-        date_obj = datetime.strptime(date_of_operation, "%Y-%m-%d %H:%M:%S")
-        date_string = date_obj.strftime("%Y-%m-%d")
-        with open(file, "r", encoding="UTF-8") as f:
-            user_currency = json.load(f)
-            cur = user_currency.get("user_currencies")
-            date = date_string
-            url = f"https://api.apilayer.com/exchangerates_data/{date}"
-            base_usd = cur[0]
-            base_eur = cur[1]
-            symbols = "RUB"
-            headers = {"apikey": API_KEY}
-            payload_1 = {"symbols": symbols, "base": base_usd}
-            payload_2 = {"symbols": symbols, "base": base_eur}
-            currency_rates = []
-            response_usd = requests.get(url, headers=headers, params=payload_1)
-            status_code_1 = response_usd.status_code
-            response_eur = requests.get(url, headers=headers, params=payload_2)
-            status_code_2 = response_eur.status_code
-            if status_code_1 == 200 and status_code_2 == 200:
-                logger.info("Статус операции - ОК")
-                result_usd = response_usd.json()
-                result_eur = response_eur.json()
-                currency_rates.append({"currency": base_usd, "rate": round(result_usd["rates"]["RUB"], 2)})
-                currency_rates.append({"currency": base_eur, "rate": round(result_eur["rates"]["RUB"], 2)})
-                logger.info(f"Успешное завершение работы функции {get_currency_rates.__name__}")
-                return currency_rates
+        try:
+            date_obj = datetime.strptime(date_of_operation, "%Y-%m-%d %H:%M:%S")
+            date_string = date_obj.strftime("%Y-%m-%d")
+        except ValueError:
+            logger.error(f"Некорректный формат даты: {date_of_operation}")
+            raise ValueError("Некорректный формат даты. Ожидается 'YYYY-MM-DD HH:MM:SS'.")
+        try:
+            with open(file, "r", encoding="UTF-8") as f:
+                user_currency = json.load(f)
+                cur = user_currency.get("user_currencies")
+            if not cur or len(cur) < 2:
+                raise ValueError("Неверная структура данных в файле. Ожидаются хотя бы 2 валюты.")
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            logger.error(f"Ошибка при чтении файла: {e}")
+            raise FileNotFoundError(f"Не удалось открыть или обработать файл {file}.")
+        date = date_string
+        url = f"https://api.apilayer.com/exchangerates_data/{date}"
+        base_usd = cur[0]
+        base_eur = cur[1]
+        symbols = "RUB"
+        headers = {"apikey": API_KEY}
+        payload_1 = {"symbols": symbols, "base": base_usd}
+        payload_2 = {"symbols": symbols, "base": base_eur}
+        currency_rates = []
+        response_usd = requests.get(url, headers=headers, params=payload_1)
+        if response_usd.status_code == 200:
+            result_usd = response_usd.json()
+            currency_rates.append({"currency": base_usd, "rate": round(result_usd["rates"]["RUB"], 2)})
+        else:
+            logger.warning(f"Не удалось получить курс для {base_usd}. Статус: {response_usd.status_code}")
+        response_eur = requests.get(url, headers=headers, params=payload_2)
+        if response_eur.status_code == 200:
+            result_eur = response_eur.json()
+            currency_rates.append({"currency": base_eur, "rate": round(result_eur["rates"]["RUB"], 2)})
+        else:
+            logger.warning(f"Не удалось получить курс для {base_eur}. Статус: {response_eur.status_code}")
+        if currency_rates:
+            logger.info(f"Успешное завершение работы функции {get_currency_rates.__name__}")
+            return currency_rates
     except requests.exceptions.RequestException as e:
         logger.error(f"Функция {get_currency_rates.__name__} завершилась с ошибкой {e}")
         print("An error occurred. Please try again later.")
@@ -201,29 +236,35 @@ def get_currency_rates(date_of_operation: str, file=file_path_json) -> list[dict
         print("Некорректный формат транзакции.")
 
 
-def get_stock_prices(file=file_path_json) -> list[dict]:
+def get_stock_prices(file: str = file_path_json) -> list[dict]:
     """Стоимость акций"""
     try:
         logger.info(f"Запуск функции {get_stock_prices.__name__}")
         with open(file, "r", encoding="UTF-8") as f:
             user_currency = json.load(f)
-            stock_prices = []
-            for cur in user_currency["user_stocks"]:
-                symbol = cur
-                api_url = "https://api.api-ninjas.com/v1/stockprice?ticker={}".format(symbol)
-                response = requests.get(api_url, headers={"X-Api-Key": API_KEY_2})
-                status_code = response.status_code
-                if status_code == 200:
-                    logger.info("Статус операции - ОК")
-                    result_stock = response.json()
-                    stock_prices.append({"stock": cur, "rate": result_stock["price"]})
-            return stock_prices
+        stock_prices = []
+        for symbol in user_currency.get("user_stocks", []):
+            api_url = f"https://api.api-ninjas.com/v1/stockprice?ticker={symbol}"
+            response = requests.get(api_url, headers={"X-Api-Key": API_KEY_2})
+            if response.status_code == 200:
+                logger.info("Статус операции - ОК")
+                result_stock = response.json()
+                stock_prices.append({"stock": symbol, "rate": result_stock["price"]})
+            else:
+                logger.warning(f"Ошибка запроса для {symbol}: {response.status_code}")
+        return stock_prices
     except FileNotFoundError:
         logger.error(f"Функция {get_stock_prices.__name__} завершилась с ошибкой {FileNotFoundError}")
         print(f"Файл {file} не найден.")
+        return []
     except requests.exceptions.RequestException as e:
         logger.error(f"Функция {get_stock_prices.__name__} завершилась с ошибкой {e}")
         print("An error occurred. Please try again later.")
+        return []
     except KeyError:
         logger.error(f"Функция {get_stock_prices.__name__} завершилась с ошибкой {KeyError}")
         print("Некорректный формат транзакции.")
+        return []
+
+
+# print(get_stock_prices())

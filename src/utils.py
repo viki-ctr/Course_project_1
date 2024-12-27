@@ -77,9 +77,6 @@ def get_exel_operations(file=file_path_excel) -> DataFrame:
         return excel_operations
 
 
-# print(get_exel_operations())
-
-
 def get_data(user_date: Union[str, None]) -> datetime:
     """Функция, преобразующая дату в формат datetime"""
     try:
@@ -95,10 +92,6 @@ def get_data(user_date: Union[str, None]) -> datetime:
     except ValueError as e:
         logger.error(f"Функция {get_data.__name__} завершилась с ошибкой {e}")
         print("Формат даты должен быть 'YYYY-MM-DD HH:MM:SS'.")
-
-
-# print(get_data("2021-12-31 16:39:42"))
-# print(get_data(None))
 
 
 def get_data_value(date: Any, df_object: DataFrame) -> DataFrame:
@@ -119,12 +112,6 @@ def get_data_value(date: Any, df_object: DataFrame) -> DataFrame:
         raise ValueError(f"Ошибка при преобразовании 'Дата операции': {e}")
 
 
-# df = get_exel_operations()
-# current_date = "2019-12-20 23:59:59"
-# filtered_object = get_data_value(current_date, df)
-# print(filtered_object)
-
-
 def get_greeting(date_str: str) -> str:
     """Функция, выводящая приветствие в зависимости от времени суток"""
     logger.info(f"Запуск функции {get_greeting.__name__}")
@@ -141,9 +128,6 @@ def get_greeting(date_str: str) -> str:
     return greeting
 
 
-# print(get_greeting("2019-12-20 23:59:59"))
-
-
 def get_data_card(df_operations: DataFrame) -> list[dict]:
     """функция, выводящая 4 цифры карты, общую сумму расходов, кешбэк"""
     logger.info(f"Запуск функции {get_data_card.__name__}")
@@ -158,9 +142,6 @@ def get_data_card(df_operations: DataFrame) -> list[dict]:
         card_data.append({"last_digits": str(card)[-4:], "total_spent": round_total, "cashback": cashback})
     logger.info(f"Успешное завершение работы функции {get_data_card.__name__}")
     return card_data
-
-
-# print(get_data_card(get_exel_operations))
 
 
 def get_top_transactions(df_data: DataFrame, top_number=5) -> list[dict]:
@@ -180,10 +161,6 @@ def get_top_transactions(df_data: DataFrame, top_number=5) -> list[dict]:
         )
     logger.info(f"Успешное завершение работы функции {get_top_transactions.__name__}")
     return top_transactions_list
-
-
-# df = get_exel_operations()
-# print(get_top_transactions(df))
 
 
 def get_currency_rates(date_of_operation: str, file=file_path_json) -> list[dict]:
@@ -224,9 +201,6 @@ def get_currency_rates(date_of_operation: str, file=file_path_json) -> list[dict
         print("Некорректный формат транзакции.")
 
 
-# print(get_currency_rates("2019-12-20 23:59:59"))
-
-
 def get_stock_prices(file=file_path_json) -> list[dict]:
     """Стоимость акций"""
     try:
@@ -253,6 +227,3 @@ def get_stock_prices(file=file_path_json) -> list[dict]:
     except KeyError:
         logger.error(f"Функция {get_stock_prices.__name__} завершилась с ошибкой {KeyError}")
         print("Некорректный формат транзакции.")
-
-
-# print(get_stock_prices())

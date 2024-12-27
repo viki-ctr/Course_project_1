@@ -2,7 +2,7 @@ import json
 import logging
 import os
 
-from src.utils import (get_currency_rates, get_data, get_data_card, get_data_value, get_exel_operations, get_greeting,
+from src.utils import (get_currency_rates, get_data_card, get_data_value, get_exel_operations, get_greeting,
                        get_stock_prices, get_top_transactions)
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -39,8 +39,5 @@ def main_page(date: str):
         },
         ensure_ascii=False,
     )
-    logger.info("Завершение генерации JSON-ответа для главной страницы")
+    logger.info(f"Функция {main_page.__name__} завершена успешно.")
     return main_page_info
-
-
-# print(main_page("2019-12-20 23:59:59"))

@@ -1,8 +1,8 @@
-from typing import List, Dict, Any
-from datetime import datetime
 import logging
 import os
-
+import json
+from datetime import datetime
+from typing import Any, Dict, List
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 file_path_log = os.path.join(base_dir, "..", "logs", "services.log")
@@ -18,7 +18,7 @@ logging.basicConfig(
 logger = logging.getLogger()
 
 
-def investment_bank(month: str, transactions: List[Dict[str, Any]], limit: int) -> float:
+def investment_bank(month: str, transactions: List[Dict[str, Any]], limit: int) -> str:
     """Инвесткопилка. Позволяет копить через округление трат"""
     logger.info(f"Запуск функции {investment_bank.__name__}")
     try:
@@ -44,19 +44,22 @@ def investment_bank(month: str, transactions: List[Dict[str, Any]], limit: int) 
                 rounded_amount = (amount // limit + 1) * limit if amount > 0 else (amount // limit) * limit
                 savings = max(0, rounded_amount - amount)
                 total_savings += savings
+                total_round = round(total_savings, 2)
+                investment_piggy_bank = json.dumps({ "Отложенная сумма": total_round}, ensure_ascii=False)
         except (ValueError, TypeError):
             logger.error("Транзакция некорректна")
             continue
+    logger.info(f"Функция {investment_bank.__name__} завершена успешно.")
+    return investment_piggy_bank
 
-    return round(total_savings, 2)
-
-
+#
 # transactions = [
 #     {"Дата операции": "2024-12-10", "Сумма операции": 245.34},
-#     # {"Дата операции": "2024-12-15", "Сумма операции": 50.99},
-#     # {"Дата операции": "2024-12-20", "Сумма операции": 395.78},
-#     # {"Дата операции": "2024-11-30", "Сумма операции": 120.56},
+#     {"Дата операции": "2024-12-15", "Сумма операции": 50.99},
+#     {"Дата операции": "2024-12-20", "Сумма операции": 395.78},
+#     {"Дата операции": "2024-11-30", "Сумма операции": 120.56},
 #     {"Дата операции": "2024-12-05", "Сумма операции": 151.90}
 # ]
 # savings = investment_bank("2024-12", transactions, 50)
-# print(f"Отложенная сумма: {savings} ₽")
+# # print(f"Отложенная сумма: {savings} ₽")
+# print(savings)

@@ -39,7 +39,7 @@ def get_exel_operations(file=file_path_excel) -> DataFrame:
     """Функция для считывания финансовых операций из Excel-файла"""
     logger.info(f"Запуск функции {get_exel_operations.__name__}")
     if file == "":
-        logging.info("Файл пустой")
+        logger.info("Файл пустой")
         excel_data = pd.DataFrame(
             {
                 "Дата операции": [],
@@ -190,7 +190,6 @@ def get_currency_rates(date_of_operation: str, file=file_path_json) -> list[dict
     """Курс валют"""
     try:
         logger.info(f"Запуск функции {get_currency_rates.__name__}")
-        date_of_operation = "2019-12-20 23:59:59"
         date_obj = datetime.strptime(date_of_operation, "%Y-%m-%d %H:%M:%S")
         date_string = date_obj.strftime("%Y-%m-%d")
         with open(file, "r", encoding="UTF-8") as f:

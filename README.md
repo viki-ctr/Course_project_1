@@ -13,8 +13,15 @@ git clone https://github.com/username/myblog.git
 ```
 
 2. Установите зависимости:
+Если вы работаете с pip:
+
 ```
 pip install -r requirements.txt
+```
+Если вы работаете с poetry:
+```
+poetry install
+poetry update
 ```
 
 ## Использование:
@@ -26,6 +33,15 @@ pip install -r requirements.txt
 
 Функциональность:
 1. Модуль utils предназначен для хранения вспомогательных функций.
+Для функций get_currency_rate и get_stock_prices понадобятся ARI- ключи. 
+Для get_currency_rate используется API_KEY, его можно получить по ссылке после регистрации: 
+https://apilayer.com/marketplace/exchangerates_data-api?live_demo=show?e=Sign+In&l=Success#endpoints
+Заходим на главную страницу -> раздел Currency -> Exchange Rates Data API
+В Documentation -> Endpoints можно найти демо работы API.
+Для get_stock_prices используется API_KEY_2, его можно получить по ссылке после регистрации:
+https://api-ninjas.com/api/stockprice
+Если после установки вы перешли на главную страницу, то:
+API Directory -> Most Popular APIs -> Stock Price
 2. Модуль views реализует функцию для страницы "Главная".
 3. Модуль services содержит функцию, которая реализует сервис "Инвесткопилка".
 4. Модуль reports содержит функционал отчета "Траты по категории".

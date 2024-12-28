@@ -44,10 +44,10 @@ def investment_bank(month: str, transactions: List[Dict[str, Any]], limit: int) 
                 rounded_amount = (amount // limit + 1) * limit if amount > 0 else (amount // limit) * limit
                 savings = max(0, rounded_amount - amount)
                 total_savings += savings
-                total_round = round(total_savings, 2)
-                investment_piggy_bank = json.dumps({ "Отложенная сумма": total_round}, ensure_ascii=False)
         except (ValueError, TypeError):
             logger.error("Транзакция некорректна")
             continue
+    total_round = round(total_savings, 2)
+    investment_piggy_bank = json.dumps({"Отложенная сумма": total_round}, ensure_ascii=False)
     logger.info(f"Функция {investment_bank.__name__} завершена успешно.")
     return investment_piggy_bank

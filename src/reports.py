@@ -40,12 +40,11 @@ def report(filename=path_json):
 def spending_by_category(transactions: pd.DataFrame, category: str, date: Optional[str] = None) -> list[dict]:
     """Функция траты по категориям"""
     logger.info(f"Запуск функции {spending_by_category.__name__}")
+    correct_date = datetime.now()
     try:
         logger.info("Проверяем тип данных при вводе даты")
-        if type(date) is str:
+        if isinstance(date, str):
             correct_date = datetime.strptime(date, "%Y-%m-%d")
-        else:
-            correct_date = datetime.now()
     except ValueError:
         logger.error("Некорректный формат даты")
         print("Дата должна быть в формате 'YYYY-MM-DD'.")
@@ -57,7 +56,9 @@ def spending_by_category(transactions: pd.DataFrame, category: str, date: Option
         logger.error("Отсутствуют нужные столбцы")
         raise ValueError(f"DataFrame должен содержать столбцы: {', '.join(required_columns)}.")
 
-    transactions["Дата операции"] = pd.to_datetime(transactions["Дата операции"], format="%Y-%m-%d", errors="coerce")
+    transactions["Дата операции"] = pd.to_datetime(transactions["Дата операции"], errors="coerce")
+    if transactions["Дата операции"].isnull().any():
+        logger.warning("Некоторые даты не удалось преобразовать. Они будут исключены.")
     filtered_transactions = transactions[
         (transactions["Дата операции"] >= date_three_month)
         & (transactions["Дата операции"] <= correct_date)

@@ -9,7 +9,7 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 file_path_log = os.path.join(base_dir, "..", "logs", "services.log")
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.WARNING,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     filename=file_path_log,
     encoding="utf-8",
@@ -38,15 +38,12 @@ def investment_bank(month: str, transactions: List[Dict[str, Any]], limit: int) 
             continue
         try:
             logger.info("проверяем относится ли транзакция к указанному месяцу")
-            # transaction_date = datetime.strptime(transaction["Дата операции"], "%Y-%m-%d")
             transaction_date = parse(transaction["Дата операции"], dayfirst=False)
             start_of_month = month_date.replace(day=1)
             end_of_month = (start_of_month + timedelta(days=31)).replace(day=1) - timedelta(days=1)
-            # if transaction_date.year == month_date.year and transaction_date.month == month_date.month:
             if start_of_month <= transaction_date <= end_of_month:
                 amount = transaction["Сумма операции"]
                 logger.info("Округляем разницу и добавляем в копилку")
-                # rounded_amount = (amount // limit + 1) * limit if amount > 0 else (amount // limit) * limit
                 rounded_amount = (amount + limit - 1) // limit * limit
                 savings = max(0, rounded_amount - amount)
                 total_savings += savings
@@ -60,13 +57,3 @@ def investment_bank(month: str, transactions: List[Dict[str, Any]], limit: int) 
     investment_piggy_bank = json.dumps({"Отложенная сумма": total_round}, ensure_ascii=False)
     logger.info(f"Функция {investment_bank.__name__} завершена успешно.")
     return investment_piggy_bank
-
-
-transactions = [
-        {"Дата операции": "2023-12-01", "Сумма операции": 120.0},
-        {"Дата операции": "2023-12-15", "Сумма операции": 45.0},
-        {"Дата операции": "2023-11-20", "Сумма операции": 200.0},
-        {"Дата операции": "31.12.2023 16:44:00", "Сумма операции": 30.0}
-    ]
-result = investment_bank("2023-12", transactions, 50)
-print(result)

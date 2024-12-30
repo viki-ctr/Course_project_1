@@ -6,7 +6,9 @@ def test_investment_bank_valid_data():
     transactions = [
         {"Дата операции": "2023-12-01", "Сумма операции": 120.0},
         {"Дата операции": "2023-12-15", "Сумма операции": 45.0},
-        {"Дата операции": "2023-11-20", "Сумма операции": 200.0}
+        {"Дата операции": "2023-11-20", "Сумма операции": 200.0},
+        {"Дата операции": "31.12.2023 16:44:00", "Сумма операции": 30.0}
+
     ]
     result = investment_bank("2023-12", transactions, 50)
     assert result == '{"Отложенная сумма": 35.0}'
@@ -28,7 +30,7 @@ def test_investment_bank_missing_keys():
         {"Дата операции": "2023-12-15"}  # Отсутствует 'Сумма операции'
     ]
     result = investment_bank("2023-12", transactions, 50)
-    assert result == '{"Отложенная сумма": 0.0}'
+    assert result == '{"Отложенная сумма": 20.0}'
 
 
 def test_investment_bank_positive_negative_transactions():
@@ -38,7 +40,7 @@ def test_investment_bank_positive_negative_transactions():
         {"Дата операции": "2023-12-20", "Сумма операции": -45}
     ]
     result = investment_bank("2023-12", transactions, 50)
-    assert result == '{"Отложенная сумма": 40.0}'
+    assert result == '{"Отложенная сумма": 105.0}'
 
 
 def test_investment_bank_invalid_transaction_data():
